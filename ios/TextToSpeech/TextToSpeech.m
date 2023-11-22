@@ -79,7 +79,21 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     }
 
     if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
-        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+        NSError *setCategoryError = nil;
+        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord
+                                         withOptions:AVAudioSessionCategoryOptionAllowBluetooth
+                                               error:&setCategoryError];
+        if (setCategoryError) {
+            reject(@"audio_session_error", @"Failed to set audio session category", setCategoryError);
+            return;
+        }
+
+        NSError *activationError = nil;
+        [[AVAudioSession sharedInstance] setActive:YES error:&activationError];
+        if (activationError) {
+            reject(@"audio_session_error", @"Failed to activate audio session", activationError);
+            return;
+        }
     } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
         [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
     }
